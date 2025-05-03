@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Flappy Fish</title>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- PWA Manifest & Theme Color -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#70c5ce">
+
+  <!-- iOS Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Flappy Fish">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-startup-image" href="splash.png">
+</head>
+<body>
+  <!-- Welcome Screen -->
+  <div id="welcomeScreen" class="welcome-screen">
+    <h1>🐟 Flappy Fish</h1>
+    <p>Help the fish swim through the pipes! Avoid hitting them or you'll lose!<br>
+      Tap or press space to swim!
+    </p>
+    <img src="assets/fish.png" alt="Fish" class="fish-icon">
+    <button id="startGameBtn">Start Game</button>
+    <button id="installBtn" class="install-btn hidden">⬇️ Install Game</button>
+  </div>
+ 
+  <!-- Game Container (initially hidden) -->
+  <div class="game-container" style="display: none;">
+    <div class="control-panel">
+      <button id="musicToggle" title="Toggle music">🔊</button>
+      <div class="connection-status">
+        <div id="connectionLight" class="connection-light online"></div>
+        <span id="connectionText">Online</span>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+    <div class="game-over">
+      <h1>Fish Over</h1>
+      <p>Your Score: <span id="finalScore">0</span></p>
+      <button id="restartBtn">Restart</button>
+    </div>
+
+    <div class="score-display">Score: <span id="score">0</span></div>
+  </div>
+
+  <!-- Game Script -->
+  <script src="script.js"></script>
+
+  <!-- Service Worker and Install Prompt -->
+  <script>
+    // Enhanced service worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('/sw.js');
+          console.log('ServiceWorker registration successful:', registration);
+          
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            console.log('New service worker found:', newWorker);
+          });
+        } catch (error) {
+          console.error('ServiceWorker registration failed:', error);
+        }
+      });
+    }
+
+    // Install prompt handling
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
+        installBtn.classList.remove('hidden');
+      }
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      
+      installBtn.disabled = true;
+      deferredPrompt.prompt();
+      
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('User accepted install');
+        installBtn.classList.add('hidden');
+      } else {
+        console.log('User dismissed install');
+        installBtn.disabled = false;
+      }
+      deferredPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA was installed');
+      installBtn.classList.add('hidden');
+    });
+
+    // Start game button
+    document.getElementById('startGameBtn').addEventListener('click', () => {
+      document.getElementById('welcomeScreen').style.display = 'none';
+      document.querySelector('.game-container').style.display = 'block';
+      // You'll need to call your game initialization function here
+    });
+  </script>
+</body>
+</html>
